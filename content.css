@@ -1,0 +1,10 @@
+#__typerfill_ghost {
+  position: fixed;
+  pointer-events: none;
+  user-select: none;
+  z-index: 2147483647;
+  color: rgba(120, 120, 120, 0.85);
+  white-space: pre;
+  overflow: hidden;
+  will-change: left, top;
+}

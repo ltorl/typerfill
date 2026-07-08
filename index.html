@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Typerfill — free, private, in-browser autocomplete</title>
+<meta name="description" content="Typerfill predicts your next word right in the page, using a local WebGPU LLM. Free, no account, nothing ever leaves your browser.">
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #ffffff;
+    --bg-soft: #f5f5f7;
+    --fg: #1c1c1e;
+    --muted: #6e6e73;
+    --border: #e5e5ea;
+    --accent: #34c759;
+    --accent-dark: #248a3d;
+    --card: #ffffff;
+    --code-bg: #f2f2f7;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #000000;
+      --bg-soft: #131315;
+      --fg: #f2f2f7;
+      --muted: #9a9a9e;
+      --border: #2c2c2e;
+      --accent: #30d158;
+      --accent-dark: #2bb84f;
+      --card: #1c1c1e;
+      --code-bg: #1c1c1e;
+    }
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--fg);
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+    line-height: 1.5;
+  }
+
+  a { color: var(--accent-dark); }
+  @media (prefers-color-scheme: dark) { a { color: var(--accent); } }
+
+  .wrap {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  header.hero {
+    padding: 96px 0 64px;
+    text-align: center;
+  }
+
+  .logo {
+    width: 88px;
+    height: 88px;
+    border-radius: 22px;
+    margin-bottom: 24px;
+  }
+
+  h1 {
+    font-size: clamp(32px, 5vw, 44px);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin: 0 0 12px;
+  }
+
+  .tagline {
+    font-size: 19px;
+    color: var(--muted);
+    max-width: 520px;
+    margin: 0 auto 36px;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #ffffff;
+    background: var(--accent-dark);
+    border: none;
+    border-radius: 12px;
+    padding: 14px 26px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform 0.1s ease, box-shadow 0.15s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+  }
+
+  .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(52, 199, 89, 0.35);
+  }
+
+  .btn:active {
+    transform: translateY(0);
+  }
+
+  .btn svg { flex-shrink: 0; }
+
+  .btn-note {
+    display: block;
+    margin-top: 12px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin: 48px 0;
+  }
+
+  .feature {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+  }
+
+  .feature .icon {
+    font-size: 22px;
+    margin-bottom: 10px;
+  }
+
+  .feature h3 {
+    font-size: 15px;
+    margin: 0 0 6px;
+  }
+
+  .feature p {
+    font-size: 13.5px;
+    color: var(--muted);
+    margin: 0;
+  }
+
+  section h2 {
+    font-size: 22px;
+    letter-spacing: -0.01em;
+    margin: 56px 0 16px;
+  }
+
+  ol.steps {
+    padding-left: 22px;
+    margin: 0 0 40px;
+  }
+
+  ol.steps li {
+    margin-bottom: 14px;
+    font-size: 15px;
+  }
+
+  ol.steps li::marker {
+    font-weight: 600;
+    color: var(--accent-dark);
+  }
+
+  code, .path {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 2px 7px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 13px;
+  }
+
+  footer {
+    border-top: 1px solid var(--border);
+    margin-top: 64px;
+    padding: 28px 0 56px;
+    font-size: 13px;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  .ghost-demo {
+    font-size: 15px;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin: 8px 0 40px;
+  }
+  .ghost-demo .typed { color: var(--fg); }
+  .ghost-demo .predicted { color: var(--muted); }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="hero">
+      <img class="logo" alt="Typerfill logo" src="data:image/png;base64,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">
+      <h1>Typerfill</h1>
+      <p class="tagline">Free, in-browser autocomplete for any text field. Predicts your next word as you type, and completes the word you're mid-typing — powered by a language model that runs entirely on your device.</p>
+
+      <a class="btn" id="download-btn" href="#" download>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13"/><path d="M6 11l6 6 6-6"/><path d="M5 21h14"/></svg>
+        Download for Chrome
+      </a>
+      <span class="btn-note">Free · Manifest V3 · Loads unpacked · No account needed</span>
+    </header>
+
+    <div class="ghost-demo">
+      <span class="typed">I'll follow up with you </span><span class="predicted">tomorrow morning</span>
+    </div>
+
+    <div class="features">
+      <div class="feature">
+        <div class="icon">🔒</div>
+        <h3>100% local</h3>
+        <p>Runs on a local WebGPU model in your browser. Nothing you type is ever sent to a server.</p>
+      </div>
+      <div class="feature">
+        <div class="icon">⚡</div>
+        <h3>Works everywhere</h3>
+        <p>Any text box, textarea, or contenteditable field on any website.</p>
+      </div>
+      <div class="feature">
+        <div class="icon">💸</div>
+        <h3>Free, no account</h3>
+        <p>No sign-up, no subscription, no usage limits.</p>
+      </div>
+      <div class="feature">
+        <div class="icon">⌨️</div>
+        <h3>Tab to accept</h3>
+        <p>Ghost text appears as you type — press Tab to accept, keep typing to ignore.</p>
+      </div>
+    </div>
+
+    <section>
+      <h2>Install it</h2>
+      <ol class="steps">
+        <li>Click <strong>Download for Chrome</strong> above to get the zip.</li>
+        <li>Unzip it — you'll get a <span class="path">typerfill</span> folder.</li>
+        <li>Open <code>chrome://extensions</code> in Chrome.</li>
+        <li>Turn on <strong>Developer mode</strong> (top right).</li>
+        <li>Click <strong>Load unpacked</strong> and select the unzipped <span class="path">typerfill</span> folder.</li>
+        <li>That's it — start typing in any text field on the web.</li>
+      </ol>
+    </section>
+
+    <footer>
+      Typerfill is free and open source.
+    </footer>
+  </div>
+
+  <script>
+    // TODO: replace with the real GitHub zip URL once the repo exists, e.g.
+    // https://github.com/<owner>/<repo>/archive/refs/heads/main.zip
+    const REPO_ZIP_URL = "PASTE_GIT_REPO_ZIP_URL_HERE";
+    document.getElementById("download-btn").href = REPO_ZIP_URL;
+  </script>
+</body>
+</html>
